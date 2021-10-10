@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\Deploy\Test\Unit\Model;
 
 use Magento\Deploy\Model\Filesystem as DeployFilesystem;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\Framework\ObjectManagerInterface;
@@ -73,7 +74,7 @@ class FilesystemTest extends TestCase
     private $cmdPrefix;
 
     /**
-     * @inheritDoc
+     * @inheritdoc
      */
     protected function setUp(): void
     {
@@ -112,7 +113,7 @@ class FilesystemTest extends TestCase
                 'fr_FR' => 'France',
                 'de_DE' => 'Germany',
                 'nl_NL' => 'Netherlands',
-                'en_US' => 'USA'
+                'en_US' => 'USA',
             ]);
         $locale = $objectManager->getObject(Locale::class, ['lists' => $lists]);
 
@@ -123,7 +124,7 @@ class FilesystemTest extends TestCase
                 'shell' => $this->shell,
                 'filesystem' => $this->filesystem,
                 'userCollection' => $this->userCollection,
-                'locale' => $locale
+                'locale' => $locale,
             ]
         );
 
@@ -131,9 +132,9 @@ class FilesystemTest extends TestCase
     }
 
     /**
-     * @return void
+     * @throws LocalizedException
      */
-    public function testRegenerateStatic(): void
+    public function testRegenerateStatic()
     {
         $storeLocales = ['fr_FR', 'de_DE', 'nl_NL'];
         $this->storeView->method('retrieveLocales')
@@ -151,16 +152,18 @@ class FilesystemTest extends TestCase
             ->method('execute')
             ->withConsecutive([$cacheFlushCmd], [$setupDiCompileCmd], [$cacheFlushCmd], [$staticContentDeployCmd]);
 
-        $this->output
+        $this->output->expects(self::at(0))
             ->method('writeln')
-            ->withConsecutive(
-                ['Starting compilation'],
-                [],
-                ['Compilation complete'],
-                ['Starting deployment of static content'],
-                [],
-                ['Deployment of static content complete']
-            );
+            ->with('Starting compilation');
+        $this->output->expects(self::at(2))
+            ->method('writeln')
+            ->with('Compilation complete');
+        $this->output->expects(self::at(3))
+            ->method('writeln')
+            ->with('Starting deployment of static content');
+        $this->output->expects(self::at(5))
+            ->method('writeln')
+            ->with('Deployment of static content complete');
 
         $this->deployFilesystem->regenerateStatic($this->output);
     }
@@ -169,8 +172,9 @@ class FilesystemTest extends TestCase
      * Checks a case when configuration contains incorrect locale code.
      *
      * @return void
+     * @throws LocalizedException
      */
-    public function testGenerateStaticForNotAllowedStoreViewLocale(): void
+    public function testGenerateStaticForNotAllowedStoreViewLocale()
     {
         $this->expectException('InvalidArgumentException');
         $this->expectExceptionMessage(
@@ -189,8 +193,9 @@ class FilesystemTest extends TestCase
      * Checks as case when admin locale is incorrect.
      *
      * @return void
+     * @throws LocalizedException
      */
-    public function testGenerateStaticForNotAllowedAdminLocale(): void
+    public function testGenerateStaticForNotAllowedAdminLocale()
     {
         $this->expectException('InvalidArgumentException');
         $this->expectExceptionMessage(
@@ -209,10 +214,9 @@ class FilesystemTest extends TestCase
      * Initializes admin user locale.
      *
      * @param string $locale
-     *
      * @return void
      */
-    private function initAdminLocaleMock($locale): void
+    private function initAdminLocaleMock($locale)
     {
         /** @var User|MockObject $user */
         $user = $this->getMockBuilder(User::class)
