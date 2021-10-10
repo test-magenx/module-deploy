@@ -105,11 +105,6 @@ class RequireJs implements BundleInterface
     private $pathToBundleDir;
 
     /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
      * Bundle constructor
      *
      * @param Filesystem $filesystem
@@ -190,8 +185,6 @@ class RequireJs implements BundleInterface
         }
 
         $this->files = [];
-
-        return true;
     }
 
     /**
@@ -200,8 +193,6 @@ class RequireJs implements BundleInterface
     public function clear()
     {
         $this->staticDir->delete($this->pathToBundleDir);
-
-        return true;
     }
 
     /**
